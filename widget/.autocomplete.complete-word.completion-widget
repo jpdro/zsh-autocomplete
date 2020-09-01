@@ -3,9 +3,6 @@ local curcontext; .autocomplete.curcontext complete-word
 
 _main_complete
 local ret=$?
-if (( ret == 0 )); then
-  compstate[insert]='1'
-  compstate[list]=''
-  _autocomplete.suffix
-fi
+compstate[insert]='1 '
+compstate[list]=''
 return ret

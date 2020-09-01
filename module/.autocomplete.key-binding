@@ -52,7 +52,7 @@ add-zsh-hook precmd .autocomplete.key-binding.precmd
       bindkey $key[ControlSpace] expand-word
       bindkey -M menuselect $key[ControlSpace] end-of-history
       zstyle ':completion:*:(alias-expansions|requoted|unambiguous)' format \
-        '%F{green}%d:  %F{blue}%Bctrl-space%b'
+        '%F{green}%d:  %F{blue}%Bctrl-space%b%f'
       zstyle ':completion:*:history-lines' format \
         '%F{green}%d:  %F{blue}%Bctrl-space%b%F{blue} to insert  %Bup%b%F{blue} for more%f'
   else

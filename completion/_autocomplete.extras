@@ -1,6 +1,11 @@
 #autoload
 
-[[ -z $BUFFER || $compstate[old_list] == keep || $curcontext == history-search:* ]] && return 1
+[[ -z $BUFFER || $curcontext == history-search:* ]] && return 1
+
+if [[ $compstate[old_list] == keep ]]; then
+  _autocomplete.unambiguous
+  return
+fi
 
 (( CURRENT > 1 && compstate[nmatches] == 0 )) && _autocomplete.history_words
 if _autocomplete.alias_expansions || _autocomplete.requoted ||

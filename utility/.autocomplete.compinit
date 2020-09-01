@@ -46,7 +46,7 @@ _main_complete() {
 
   (( $#comppostfuncs == 0 )) &&
     local +h -a comppostfuncs=( _autocomplete.extras _autocomplete.long_list )
-  compstate[insert]='automenu'
+  compstate[insert]='menu '
   .autocomplete._main_complete "$@"
 }
 
