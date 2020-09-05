@@ -7,8 +7,8 @@ add-zsh-hook precmd .autocomplete.async.precmd
   emulate -L zsh -o noshortloops -o warncreateglobal -o extendedglob
   add-zsh-hook -d precmd .autocomplete.async.precmd
 
-  zmodload -i zsh/system  # `sysparams` array
-  zmodload -i zsh/zpty
+  zmodload zsh/system  # `sysparams` array
+  zmodload zsh/zpty
 
   [[ -v _AUTOCOMPLETE__ASYNC_DELAY ]] || typeset -gHF _AUTOCOMPLETE__ASYNC_DELAY=.75
   [[ -v _AUTOCOMPLETE__ASYNC_TIMEOUT ]] || typeset -gHF _AUTOCOMPLETE__ASYNC_TIMEOUT=1.5
@@ -25,7 +25,7 @@ add-zsh-hook precmd .autocomplete.async.precmd
   typeset -gH _autocomplete__buffer _autocomplete__word
   typeset -gHa _autocomplete__region_highlight=()
 
-  zle -C _list_choices list-choices .autocomplete.list-choices.completion-widget
+  zle -C _list_choices list-choices .autocomplete.async.list-choices.completion-widget
   zle -C _explain list-choices .autocomplete.async.explain.completion-widget
 
   if [[ -v functions[_zsh_highlight_call_widget] ]]; then
@@ -56,7 +56,8 @@ add-zsh-hook precmd .autocomplete.async.precmd
 .autocomplete.async.line-pre-redraw() {
   region_highlight=( $_autocomplete__region_highlight )
 
-  if [[ -z $BUFFER ]] || (( KEYS_QUEUED_COUNT + PENDING > 0 )); then
+  if [[ -z $BUFFER && $curcontext != history-*search*:* ]] ||
+      (( KEYS_QUEUED_COUNT + PENDING > 0 )); then
     .autocomplete.async.stop
     return 0
   fi
@@ -201,7 +202,7 @@ add-zsh-hook precmd .autocomplete.async.precmd
 
 .autocomplete.async.complete.inner() {
   setopt localoptions localtraps localpatterns ${_comp_options[@]}
-  setopt nobanghist noxtrace noverbose
+  setopt completeinword nobanghist noxtrace noverbose
 
   local hooks=( chpwd periodic precmd preexec zshaddhistory zshexit zsh_directory_name )
   unset ${^hooks}_functions &> /dev/null
@@ -224,7 +225,6 @@ add-zsh-hook precmd .autocomplete.async.precmd
 
   completion-widget() {
     unset 'compstate[vared]'
-    local curcontext; .autocomplete.curcontext list-choices
     local +h -a comppostfuncs=( _autocomplete.extras message )
     _main_complete &> /dev/null
     compstate[insert]=''
@@ -243,7 +243,7 @@ add-zsh-hook precmd .autocomplete.async.precmd
 
 .autocomplete.async.complete.fd-widget() {
   setopt localoptions localtraps localpatterns ${_comp_options[@]}
-  setopt nobanghist
+  setopt completeinword nobanghist
 
   local -F seconds
   local -i pid nmatches list_lines
@@ -260,7 +260,8 @@ add-zsh-hook precmd .autocomplete.async.precmd
     fi
   }
 
-  [[ $_autocomplete__buffer == $buffer && $_autocomplete__word == $word ]] && return
+  [[ ( -n $_autocomplete__buffer || -n $_autocomplete__word ) &&
+    $_autocomplete__buffer == $buffer && $_autocomplete__word == $word ]] && return
 
   _autocomplete__buffer=''
   _autocomplete__word=''
@@ -278,9 +279,7 @@ add-zsh-hook precmd .autocomplete.async.precmd
   fi
 }
 
-.autocomplete.list-choices.completion-widget() {
-  local curcontext; .autocomplete.curcontext list-choices
-
+.autocomplete.async.list-choices.completion-widget() {
   local -F seconds=$1
   local -i nmatches=$2 list_lines=$3
   local mesg=$4 reply
@@ -290,7 +289,7 @@ add-zsh-hook precmd .autocomplete.async.precmd
   local min_input; zstyle -s ":autocomplete:$curcontext" min-input min_input || min_input=1
   local max_lines; zstyle -s ":autocomplete:$curcontext" max-lines max_lines || max_lines='50%'
 
-  if [[ $compstate[context] == command ]] &&
+  if [[ $compstate[context] == command && $curcontext != history-*search*:* ]] &&
       (( CURRENT == 1 && $#words[CURRENT] < min_input )); then
     _main_complete -
   elif (( nmatches == 0 )); then

@@ -1,7 +1,6 @@
 #!/bin/zsh
 
 local curcontext; .autocomplete.curcontext expand-word
-
 local completer=$_lastcomp[completer]
 _main_complete
 local ret=$?

@@ -1,5 +1,4 @@
 #!/bin/zsh
-local curcontext; .autocomplete.curcontext complete-word
 
 local lbuffer=$LBUFFER
 if (( $#RBUFFER == 0 && $#POSTDISPLAY > 0 )); then

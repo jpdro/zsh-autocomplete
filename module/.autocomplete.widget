@@ -12,9 +12,13 @@ add-zsh-hook precmd .autocomplete.widget.precmd
   .autocomplete.widget.c complete-word complete-word complete-word
   .autocomplete.widget.z _complete_word complete-word
   .autocomplete.widget.c expand-word complete-word expand-word
-  .autocomplete.widget.z history-search history-search
+  .autocomplete.widget.z history-search-backward history-search
+  .autocomplete.widget.z history-search-forward history-search
   .autocomplete.widget.c _history_search menu-select history-search
-  .autocomplete.widget.z up-line-or-search up-line-or-search
+  .autocomplete.widget.z up-line-or-search line-or-search
+  .autocomplete.widget.z down-line-or-search line-or-search
+  .autocomplete.widget.z history-incremental-search-backward history-search
+  .autocomplete.widget.z history-incremental-search-forward history-search
   .autocomplete.widget.c insert-unambiguous menu-complete insert-unambiguous
   .autocomplete.widget.c reverse-insert-unambiguous reverse-menu-complete insert-unambiguous
   .autocomplete.widget.c list-expand menu-select list-expand
@@ -22,7 +26,8 @@ add-zsh-hook precmd .autocomplete.widget.precmd
   .autocomplete.widget.c reverse-menu-complete reverse-menu-complete menu-complete
   .autocomplete.widget.c menu-select menu-select menu-select
   .autocomplete.widget.c reverse-menu-select menu-select menu-select
-  .autocomplete.widget.z down-line-or-select down-line-or-select
+  .autocomplete.widget.z down-line-or-select line-or-select
+  .autocomplete.widget.z up-line-or-select line-or-select
 
   if [[ -v functions[_zsh_autosuggest_bind_widgets] ]]; then
     [[ -v ZSH_AUTOSUGGEST_IGNORE_WIDGETS ]] && ZSH_AUTOSUGGEST_IGNORE_WIDGETS+=(

@@ -1,35 +1,138 @@
 #!/bin/zsh
 setopt localoptions localtraps localpatterns ${_comp_options[@]}
-setopt nobeep
-local curcontext; .autocomplete.curcontext history-search
+setopt completeinword
 
-local -A keymap_historysearch=(
-  $key[Left] .backward-char
-  $key[Right] .forward-char
-  $key[ForwardWord] .backward-word
-  $key[BackwardWord] .forward-word
-  $key[Home] .beginning-of-line
-  $key[End] .end-of-line
-)
-local -A keymap_menuselect=()
-local k v ret buffer=$BUFFER
+if [[ $WIDGET == *-incremental-* ]]; then
+  if [[ ! -v functions[.autocomplete.async.complete] ]]; then
+    zle .$WIDGET
+    return
+  fi
 
-BUFFER="${(j:*:)${(bZ+C+)BUFFER}}"
-zle -R
+  [[ $curcontext == $WIDGET:* ]] && return 1
+
+  if [[ $curcontext == *-incremental-* ]]; then
+    .autocomplete.curcontext $WIDGET
+    .autocomplete.async.complete "$LBUFFER" "$RBUFFER"
+    _autocomplete__buffer=''
+    _autocomplete__word=''
+    return
+  fi
+
+  zle split-undo
+  local -i changeno=$UNDO_CHANGE_NO
+  local -i savelim=$UNDO_LIMIT_NO
+fi
+
 {
-  for k v in ${(kv@)keymap_historysearch}; do
+  [[ -v functions[_zsh_autosuggest_disable] ]] && _zsh_autosuggest_disable
+
+  local curcontext; .autocomplete.curcontext $WIDGET
+
+  local -A keymap_menuselect=()
+  local k v; for k v in \
+      $key[Left] .backward-char \
+      $key[Right] .forward-char \
+      $key[ForwardWord] .backward-word \
+      $key[BackwardWord] .forward-word \
+      $key[Home] .beginning-of-line \
+      $key[End] .end-of-line; do
     keymap_menuselect[$k]="$(bindkey -M menuselect -L $k)"
     bindkey -M menuselect $k $v
   done
+  keymap_menuselect[$k]="$(bindkey -M menuselect -L $key[BackTab])"
+  bindkey -M menuselect -s $key[BackTab] $key[DeleteList]$key[Undo]'^[0'$key[Up]
 
-  zle _history_search
-  ret=$?
-  if (( ret == 0 )); then
-    zle .expand-history
+  local -a words
+  local -i _current
+  local _prefix _suffix
+
+  .autocomplete.get() {
+    _words=( "${(@)words}" )
+    _current=$CURRENT
+    _prefix=$PREFIX
+    _suffix=$SUFFIX
+  }
+
+  zle -C .autocomplete.get list-choices .autocomplete.get
+  zle .autocomplete.get
+
+  local lbuffer=$LBUFFER
+  local rbuffer=$RBUFFER
+  LBUFFER=${LBUFFER%${(j.*.)~${(b)_words[1,_current-1]}}*$_prefix}
+  RBUFFER=${RBUFFER#$_suffix*${(j.*.)~${(b)_words[_current+1,-1]}}}
+  _prefix=${(j:*:)${(bZ+C+)lbuffer#$LBUFFER}}
+  _suffix=${(j:*:)${(bZ+C+)rbuffer%$RBUFFER}}
+  zle -Rc
+
+  if [[ $WIDGET == *-incremental-* ]]; then
+    .autocomplete.async.complete "$_prefix" "$_suffix"
+    _autocomplete__buffer=''
+    _autocomplete__word=''
+
+    .autocomplete.maybe-complete() {
+      _main_complete
+      local ret=$?
+      if (( CURRENT == 1 )) && [[ -n $words[CURRENT] ]]; then
+        compstate[insert]='1'
+      else
+        compstate[insert]=' '
+      fi
+      return ret
+    }
+    .autocomplete.complete-and-accept() {
+      zle .autocomplete.maybe-complete
+      zle -R
+      zle .accept-line
+    }
+    .autocomplete.self-insert-wildcard() {
+      if [[ $KEYS == [[:IFS:]] && $LBUFFER[-1] != ';' ]]; then
+        LBUFFER+='*'
+      else
+        zle .self-insert
+      fi
+    }
+    .autocomplete.reverse-or-break() {
+      if [[ $curcontext == $WIDGET:* ]]; then
+        zle .send-break
+      else
+        .autocomplete.curcontext $WIDGET
+        .autocomplete.async.complete "$LBUFFER" "$RBUFFER"
+        _autocomplete__buffer=''
+        _autocomplete__word=''
+        zle -R
+      fi
+    }
+    zle -C .autocomplete.maybe-complete complete-word .autocomplete.maybe-complete
+    zle -N accept-line .autocomplete.complete-and-accept
+    zle -N self-insert .autocomplete.self-insert-wildcard
+
+    () {
+      lbuffer=$LBUFFER
+      rbuffer=$RBUFFER
+      local +h PREDISPLAY="$LBUFFER❯ "
+      local +h POSTDISPLAY=" ❮$RBUFFER"
+      local +h LBUFFER=$_prefix
+      local +h RBUFFER=$_suffix
+      zle split-undo
+      UNDO_LIMIT_NO=$UNDO_CHANGE_NO
+      zle recursive-edit
+      ret=$?
+      _prefix=$LBUFFER
+      _suffix=$RBUFFER
+    }
+    zle .undo $changeno
+    if (( ret == 0 )); then
+      LBUFFER=$lbuffer$_prefix
+      RBUFFER=$_suffix$rbuffer
+    fi
   else
-    BUFFER=$buffer
+    LBUFFER="$LBUFFER$_prefix"
+    RBUFFER="$_suffix$RBUFFER"
+    zle -R
+    zle _history_search
+    ret=$?
+    (( ret == 0 )) || zle .undo
   fi
-
 } always {
   for k v in ${(kv@)keymap_menuselect}; do
     if [[ $v == *'undefined key' ]]; then
@@ -38,5 +141,16 @@ zle -R
       eval "$v"
     fi
   done
+
+  if [[ $WIDGET == *-incremental-* ]]; then
+    UNDO_LIMIT_NO=savelim
+    _autocomplete__buffer=''
+    _autocomplete__word=''
+    .autocomplete.async.complete "$LBUFFER" "$RBUFFER"
+    zle -A .accept-line accept-line
+    zle -A .self-insert self-insert
+  fi
+
+  [[ -v functions[_zsh_autosuggest_disable] ]] && _zsh_autosuggest_disable
 }
 return ret

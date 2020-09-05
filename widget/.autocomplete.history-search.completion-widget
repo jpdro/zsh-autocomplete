@@ -1,10 +1,14 @@
 #!/bin/zsh
-local curcontext; .autocomplete.curcontext history-search
 
-_main_complete _autocomplete.history_lines
+_main_complete
 local ret=$?
-if (( ret == 0 )); then
-  compstate[insert]='menu:0'
-  compstate[list]='list force'
-fi
+case $WIDGET in
+  *-backward)
+    compstate[insert]='menu:0'
+    ;;
+  *-forward)
+    compstate[insert]='menu:1'
+    ;;
+esac
+compstate[list]='list force'
 return ret

@@ -30,4 +30,9 @@ for line in $lines; do
     matches+=( $word )
   fi
 done
+if [[ -z $words[CURRENT] ]]; then
+  local max_lines; zstyle -s ":autocomplete:$curcontext" max-lines max_lines || max_lines='50%'
+  local -i len=$(( min($#matches,_autocomplete__max_lines($max_lines)) ))
+  matches=( "${(@)matches[1,len]}" )
+fi
 compadd -fQ -a matches

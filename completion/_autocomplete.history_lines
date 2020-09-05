@@ -1,63 +1,76 @@
 #autoload
 
-local -a displays=() matches=() numbers=()
-
 (( $#words > 1 || CURRENT > 1 )) && return 1
 [[ $curcontext == *(approximate|correct|spell)* ]] && return 1
 
-local lbuffer=''
-local word=$words[1]
+local lbuffer='' rbuffer=''
+local word=$words[CURRENT]
 
-if [[ $curcontext != history-search:* ]]; then
-
-  [[ -z $BUFFER ]] && return 1
-
-  lbuffer=${BUFFER%$PREFIX$SUFFIX*${~${(j.*.)${(b)words[CURRENT+1,-1]}}}}
-  word=${(b)word}
+if [[ $curcontext != history-interactive-search*:* ]]; then
+  local -a lwords=( "${(Z+C+b)LBUFFER%$PREFIX}" )
+  [[ $lwords[-1] == [\;\n\{] ]] || lbuffer="${(j.*.)lwords}"
 fi
+[[ $curcontext == history-*search*:* ]] || word=${(b)word}
 
-local query="*"
-if [[ -n $BUFFER ]]; then
-  for query in "*${(b)lbuffer}*(#ia"{0..7}")$~word*"; do
-    numbers=( "${(@k)history[(r)${~query}]}" )
-    [[ -n $numbers ]] && break
-  done
-fi
-
-if [[ $curcontext == history-search:* ]]; then
-  numbers=( "${(@Oak)history[(R)${~query}]}" )
-fi
-
-local -A subs=(
-  '{ ;'   '{'
-  '; }'   '}'
-  ' ;'    ';'
-  ' () {' '() {'
-  $'\n'   '\n'
-)
-local -i wid=$(( $COLUMNS - 1 ))
-local k v num line
-for num in $numbers; do
-  line=${(Z+C+)history[$num]}
-  for k v in ${(@kv)subs}; do
-    line=${line//$k/$v}
-  done
-  if [[ $curcontext == history-search:* ]]; then
-    matches+=( "!$num" )
-    line="${(pl:$#SAVEHIST:)num}  $line"
-  else
-    matches+=( "${history[$num]}" )
-  fi
-  displays+=( "${(r:wid:)line}" )
+local -a sopt=() events=() matches=()
+local -a queries=( "$~lbuffer*" )
+[[ -n $word ]] && queries=( "$~lbuffer*(#ia"{0..$(( min(7, $#word / 3) ))}")$~word*" )
+local q; for q in $queries; do
+  event=$history[(r)$~q]
+  [[ -n $event ]] && break
 done
 
-local group_opt='-V'
-[[ $_completer == expand ]] && group_opt='-J'
+events=( "$event" )
+matches=( "$event" )
 
-local -a suffix_opts=()
-[[ $curcontext == history-search:* ]] && suffix_opts=( -S ';' -r '^ ' )
+if [[ -n $event && $curcontext == history-*search*:* ]]; then
+  sopt=( -S ';' ); [[ -z $lbuffer ]] || sopt=( -S " $lbuffer[-1]" )
+
+  print -v events -f "%${#HISTNO}.${#HISTNO}s  %s" "${(kv@)history[(R)$~q]}"
+  events=( "$events[@]" )
+  local max_lines; zstyle -s ":autocomplete:$curcontext" max-lines max_lines || max_lines='50%'
+  local -i len=$(( min( $#events[@], _autocomplete__max_lines($max_lines) ) ))
+  case $curcontext in
+    history-search-backward:*)
+      events=( "${(aO@)events}" ); [[ -v NUMERIC ]] || events=( "${(@)${(@)events}[-len,-1]}" )
+      ;;
+    history-search-forward:*)
+      events=( "${(aO@)events}" ); [[ -v NUMERIC ]] || events=( "${(@)${(@)events}[1,len]}" )
+      ;;
+    history-incremental-search-forward:*)
+      events=( "${(@)${(aO@)events}[1,len]}" )
+      ;;
+    *)
+      events=( "${(@)${(@)events}[1,len]}" )
+      ;;
+  esac
+
+  matches=( "${(@)${(@)events}#[ [:digit:]](#c$#HISTNO)  }" )
+
+  if ! [[ -v NUMERIC && $curcontext == history-search*:* ]]; then
+    local -i i; for (( i = 1; i <= $#events; i++ )); do
+      events[i]="${(M)events[i]#[ [:digit:]](#c$#HISTNO)  }${(Z+C+)matches[i]}"
+    done
+  fi
+fi
+
+[[ -n $lbuffer ]] && matches=( "${(@)${(@)matches#$~lbuffer}##[[:IFS:]]#}" )
+
+[[ -z $matches ]] && return 1
+
+events=( "${events[@]//(#m)[^[:print:]]##/${(q+)MATCH}}" )
+if [[ $curcontext == history-*search*:* && ! -v NUMERIC ]]; then
+  events=( "${(@r:COLUMNS-1:)events}" )
+fi
+
+local group_opt='-2'
+if [[ $_completer == expand ]]; then
+  group_opt+='J'
+else
+  group_opt+='V'
+fi
 
 local _comp_no_ignore=1
 local expl
 _description $group_opt history-lines expl 'history match'
-compadd "$expl[@]" -QU $suffix_opts -ld displays -a matches
+compadd "$expl[@]" -QU $sopt -r ';\n\-' -ld events -a matches

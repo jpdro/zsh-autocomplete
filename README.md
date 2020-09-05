@@ -2,7 +2,7 @@
 `zsh-autocomplete` adds **real-time type-ahead autocompletion** to Zsh, plus many more completion
 features.
 
-[![file-search](.img/file-search.gif)](https://asciinema.org/a/356653)
+[![file search](.img/file-search.gif)](https://asciinema.org/a/356653)
 
 * [Features](#features)
 * [Key Bindings](#key-bindings)
@@ -19,15 +19,24 @@ features.
   ![recent dirs](.img/recent-dirs.png)
   * Supports `cdr`, `zsh-z`, `zoxide`, `z.lua`, `rupa/z.sh`, `autojump` and `fasd`.
 
-* Automatic incremental history search:
+* Inline incremental history search:
 
-  ![history lines](.img/history-lines.png)
+  | ![history lines](.img/history-lines.png) |
+  | --- |
+
+* Multi-line incremental history search ([<kbd>⌃</kbd><kbd>R</kbd>](# "ctrl-R") and
+  [<kbd>⌃</kbd><kbd>S</kbd>](# "ctrl-S") in emacs mode, by default):
+
+  [![history search](.img/history-search.gif)](https://asciinema.org/a/358197)
+
+  * [<kbd>␣</kbd>](# "space") inserts [<kbd>*</kbd>](# "wildcard").
 
 * History menu ([<kbd>↑</kbd>](# "up")):
 
   | ![history menu 1](.img/history-menu-1.png) | ![history menu 2](.img/history-menu-2.png) |
   | --- | --- |
 
+  * Shows half a screenful by default. Press [<kbd>⇤</kbd>](# "shift-tab") to load entire history.
   * Does history search when buffer is non-empty:
 
     | ![history search 1](.img/history-search-1.png) | ![history search 2](.img/history-search-2.png) |
@@ -61,45 +70,55 @@ features.
 # Key Bindings
 | Key(s) | Action | <sub>[Widget](#advanced-choose-your-own-key-bindings)</sub> |
 | --- | --- | --- |
-| any | Show completions (asynchronously) | - |
-| [<kbd>⇥</kbd>](# "tab") | Accept top completion or next autosuggestion word (with `zsh-autosuggestions`) | <sub>`complete-word`</sub> |
-| [<kbd>⌃</kbd><kbd>␣</kbd>](# "ctrl-space") | Accept context-sensitive completion: history line, alias expansion, alternative quoting or common substring | <sub>`expand-word`</sub> |
-| [<kbd>↓</kbd>](# "down") | Open completion menu or move cursor down (in multi-line buffer) | <sub>`down-line-or-select`</sub> |
+| any | Show completions (asynchronously) | <sub>`_list_choices`</sub> |
+| [<kbd>⇥</kbd>](# "tab") | Accept top completion (or next `zsh-autosuggestions` word) | <sub>`complete-word`</sub> |
+| [<kbd>⌃</kbd><kbd>␣</kbd>](# "ctrl-space") | Accept context-sensitive completion (history line, alias expansion, alternative quoting, common substring) | <sub>`expand-word`</sub> |
+| [<kbd>↓</kbd>](# "down") | Open [completion menu](#completion-menu) or move cursor down (in multi-line buffer) | <sub>`down-line-or-select`</sub> |
 | [<kbd>⇟</kbd>](# "page down") | Open completion menu (always) | <sub>`menu-select`</sub> |
-| [<kbd>↑</kbd>](# "up") | Open history menu or move cursor up (in multi-line buffer) | <sub>`up-line-or-search`</sub> |
+| [<kbd>⇤</kbd>](# "shift-tab") | Open extended completion menu | <sub>`list-expand`</sub> |
+| [<kbd>↑</kbd>](# "up") | Open [history menu](#history-menu) or move cursor up (in multi-line buffer) | <sub>`up-line-or-search`</sub> |
 | [<kbd>⇞</kbd>](# "page up") | Open history menu (always) | <sub>`history-search`</sub> |
-| [<kbd>⇤</kbd>](# "shift-tab") | Reveal hidden completions and additional info | <sub>`list-expand`</sub> |
-
-## History Menu
-| Key(s) | Action |
-| --- | --- |
-| [<kbd>↑</kbd><kbd>↓</kbd>](# "up or down") | Change selection |
-| [<kbd>⇞</kbd>](# "page up") | Page up |
-| [<kbd>⇟</kbd>](# "page down") | Page down |
-| [<kbd>⌥</kbd><kbd><</kbd>](# "alt-<") | Beginning of menu |
-| [<kbd>⌥</kbd><kbd>></kbd>](# "alt->") | End of menu |
-| [<kbd>↩︎</kbd>](# "enter") | Accept selection, exit menu and substitute history expansions |
-| [<kbd>⇥</kbd>](# "tab") | Accept selection, but stay in menu (multi-select) |
-| other | Accept selection, exit menu and substitute history expansions (then execute the key just typed) |
 
 ## Completion Menu
 | Key(s) | Action |
 | --- | --- |
-| [<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>](# "arrow keys") | Change selection |
-| [<kbd>↖︎</kbd>](# "home") | Beginning of line |
-| [<kbd>↘︎</kbd>](# "end") | End of line |
-| [<kbd>⌥</kbd><kbd>b</kbd>](# "alt-b") | Backward one group (if groups are shown) |
-| [<kbd>⌥</kbd><kbd>f</kbd>](# "alt-f") | Forward one group (if groups are shown) |
-| [<kbd>⇞</kbd>](# "page up") | Page up |
-| [<kbd>⇟</kbd>](# "page down") | Page down |
-| [<kbd>⌥</kbd><kbd><</kbd>](# "alt-<") | Beginning of menu |
-| [<kbd>⌥</kbd><kbd>></kbd>](# "alt->") | End of menu |
-| [<kbd>⌃</kbd><kbd>␣</kbd>](# "ctrl-space") | End of menu |
 | [<kbd>↩︎</kbd>](# "enter") | Accept selection and exit menu |
 | [<kbd>⇥</kbd>](# "tab") | Accept selection, but stay in menu (multi-select) |
-| [<kbd>⇤</kbd>](# "shift-tab") | Reveal hidden completions and additional info (does not work in history menu) |
+| [<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>](# "arrow keys") | Change selection |
+| [<kbd>⇤</kbd>](# "shift-tab") | Open extended completion menu |
+| [<kbd>↖︎</kbd>](# "home") | Beginning of row |
+| [<kbd>↘︎</kbd>](# "end") | End of row |
+| [<kbd>⇞</kbd>](# "page up") | Page up |
+| [<kbd>⇟</kbd>](# "page down") | Page down |
+| [<kbd>⌥</kbd><kbd>b</kbd>](# "alt-b") | Backward one group (if groups are shown) |
+| [<kbd>⌥</kbd><kbd>f</kbd>](# "alt-f") | Forward one group (if groups are shown) |
+| [<kbd>⌥</kbd><kbd><</kbd>](# "alt-<") | Beginning of menu |
+| [<kbd>⌥</kbd><kbd>></kbd>](# "alt->") | End of menu |
 | other | Accept selection and exit menu (then execute the key just typed) |
 
+## History Menu
+| Key(s) | Action |
+| --- | --- |
+| [<kbd>↩︎</kbd>](# "enter") | Accept selection and exit menu |
+| [<kbd>⇥</kbd>](# "tab") | Accept selection, but stay in menu (multi-select) |
+| [<kbd>↑</kbd><kbd>↓</kbd>](# "up or down") | Change selection |
+| [<kbd>⇤</kbd>](# "shift-tab") | Load entire history into menu (not possible in [incremental history search](#incremental-history-search)) |
+| [<kbd>⇞</kbd>](# "page up") | Page up |
+| [<kbd>⇟</kbd>](# "page down") | Page down |
+| [<kbd>⌥</kbd><kbd><</kbd>](# "alt-<") | Beginning of history |
+| [<kbd>⌥</kbd><kbd>></kbd>](# "alt->") | End of history |
+| other | Accept selection and exit menu (then execute the key just typed) |
+
+## Incremental History Search
+| Key(s) | Action |
+| --- | --- |
+| [<kbd>⌃</kbd><kbd>R</kbd>](# "ctrl-R") | Search backward from end of history |
+| [<kbd>⌃</kbd><kbd>S</kbd>](# "ctrl-S") | Search forward from beginning of history |
+| [<kbd>↩︎</kbd>](# "enter") | Accept top match and exit search |
+| [<kbd>⇥</kbd>](# "tab") | Accept top match, but stay in search (multi-select) |
+| [<kbd>↑</kbd><kbd>↓</kbd>](# "up or down") | Change selection |
+| [<kbd>␣</kbd>](# "space") | Insert [<kbd>*</kbd>](# "wildcard") |
+| [<kbd>⌃</kbd><kbd>C</kbd>](# "ctrl-C") | Cancel search |
 
 # Requirements
 Recommended:

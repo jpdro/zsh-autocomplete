@@ -1,5 +1,4 @@
 #!/bin/zsh
-local curcontext; .autocomplete.curcontext complete-word
 
 _main_complete
 local ret=$?

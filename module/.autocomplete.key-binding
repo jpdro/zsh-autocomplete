@@ -37,11 +37,8 @@ add-zsh-hook precmd .autocomplete.key-binding.precmd
   bindkey -M menuselect $key[BackTab] reverse-menu-complete
   if  [[ $tab_completion == (accept|fzf) ]]; then
     bindkey $key[BackTab] list-expand
-    if [[ -v key[Undo] ]]; then
-      bindkey -M menuselect $key[Tab] accept-and-hold
-      bindkey -M menuselect -s $key[BackTab] $key[DeleteList]$key[Undo]$key[BackTab]
-      bindkey -M menuselect -s $key[Undo] $key[DeleteList]$key[Undo]
-    fi
+    bindkey -M menuselect $key[Tab] accept-and-hold
+    bindkey -M menuselect -s $key[BackTab] $key[DeleteList]$key[Undo]$key[BackTab]
   fi
 
   local menuselect
@@ -65,12 +62,15 @@ add-zsh-hook precmd .autocomplete.key-binding.precmd
 
   bindkey $key[Up] up-line-or-search
   bindkey $key[Down] down-line-or-select
-  bindkey $key[PageUp] history-search
+  bindkey $key[PageUp] history-search-backward
   bindkey $key[PageDown] menu-select
-  bindkey $key[BeginningOfBuffer] beginning-of-history
-  bindkey $key[EndOfBuffer] end-of-history
   bindkey -M menuselect $key[BackwardWord] vi-backward-blank-word
   bindkey -M menuselect $key[ForwardWord] vi-forward-blank-word
   bindkey -M menuselect $key[PageUp] backward-word
   bindkey -M menuselect $key[PageDown] forward-word
+  bindkey -M menuselect $key[BeginningOfBuffer] beginning-of-history
+  bindkey -M menuselect $key[EndOfBuffer] end-of-history
+  bindkey -M menuselect $key[Undo] .undo
+  bindkey -M menuselect -s '^R' $key[DeleteList]$key[Undo]'^R'
+  bindkey -M menuselect -s '^S' $key[DeleteList]$key[Undo]'^S'
 }

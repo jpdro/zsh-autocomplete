@@ -1,6 +1,6 @@
 #autoload
 
-[[ -z $BUFFER || $curcontext == history-search:* ]] && return 1
+[[ -z $BUFFER || $curcontext == history-*search*:* ]] && return 1
 
 if [[ $compstate[old_list] == keep ]]; then
   _autocomplete.unambiguous

@@ -55,9 +55,9 @@ add-zsh-hook precmd .autocomplete.recent-dirs.precmd
     }
 
   else
+    zstyle ':chpwd:*' recent-dirs-max 0
     autoload -Uz cdr chpwd_recent_dirs
     add-zsh-hook chpwd chpwd_recent_dirs
-    zstyle ':chpwd:*' recent-dirs-max 0
 
     _autocomplete.recent_dirs() {
       setopt localoptions localtraps localpatterns ${_comp_options[@]}
@@ -79,9 +79,8 @@ add-zsh-hook precmd .autocomplete.recent-dirs.precmd
   _path_files() {
     setopt localoptions localtraps localpatterns ${_comp_options[@]}
 
-    local ret
     .autocomplete._path_files "$@"
-    ret=$?
+    local ret=$?
 
     if (( compstate[nmatches] > 0 )) || [[ $_completer == complete-fuzzy ]]; then
       _autocomplete.recent_paths

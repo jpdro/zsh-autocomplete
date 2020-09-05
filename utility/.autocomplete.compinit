@@ -30,7 +30,7 @@ fi
 
 _comp_options+=(
   globdots globstarshort numericglobsort
-  NO_alwaystoend NO_caseglob NO_completealiases NO_completeinword
+  NO_alwaystoend NO_caseglob NO_completealiases
   NO_globcomplete NO_listbeep NO_listtypes NO_markdirs
 )
 
@@ -57,7 +57,7 @@ _default() {
   .autocomplete._default
   local ret=$?
   _autocomplete.history_words
-  return ret || ?
+  return ret
 }
 
 .autocomplete.patch _description
