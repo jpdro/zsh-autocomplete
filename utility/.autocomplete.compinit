@@ -76,22 +76,29 @@ _description() {
 _complete() {
   setopt localoptions localtraps localpatterns ${_comp_options[@]}
 
-  local -i nmatches=$compstate[nmatches]
-  .autocomplete._complete "$@"
-  local ret=$?
-  (( compstate[nmatches] == nmatches )) && _comp_mesg=''
-  return ret
-}
+  {
+    if [[ ! -v functions[compadd] ]]; then
+      local dounfunction=1
+      compadd() {
+        if [[ $curcontext == *:options ]]; then
+          local -A arr=()
+          zparseopts -D -E -A arr l
+        fi
+        builtin compadd "$@"
+      }
+    fi
 
-.autocomplete.patch _correct
-_correct() {
-  setopt localoptions localtraps localpatterns ${_comp_options[@]}
-
-  if [[ -v compstate[quote] || $words[CURRENT] == [$histchars]* ]] || _autocomplete.is_glob; then
+    local -i nmatches=$compstate[nmatches]
+    .autocomplete._complete "$@"
+  } always {
+    [[ -v dounfunction ]] && [[ -v functions[compadd] ]] && unfunction compadd
+  }
+  if (( compstate[nmatches] == nmatches )); then
+    _comp_mesg=''
     return 1
+  else
+    return 0
   fi
-
-  .autocomplete._correct "$@"
 }
 
 .autocomplete.patch _expand

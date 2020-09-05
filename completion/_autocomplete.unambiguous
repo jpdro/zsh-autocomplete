@@ -1,5 +1,7 @@
 #autoload
 
+(( compstate[nmatches] <= 1 )) && return 1
+
 local expl
 
 if zstyle -t ":autocomplete:tab:" completion 'insert'; then
@@ -22,7 +24,8 @@ local isuffix=$ISUFFIX$QISUFFIX
 [[ -n $iprefix ]] && unambiguous=${unambiguous#$iprefix}
 [[ -n $isuffix ]] && unambiguous=${unambiguous%$isuffix}
 
-[[ $unambiguous == (#i)$~words[CURRENT] || $~words[CURRENT] == *$unambiguous* ]] && return 1
+[[ $unambiguous == (?$words[CURRENT]|$words[CURRENT]?) || $unambiguous == (#i)$~words[CURRENT] ||
+  $words[CURRENT] == *$unambiguous* ]] && return 1
 
 _description unambiguous expl 'common substring'
 compadd "$expl[@]" -QU - $unambiguous
