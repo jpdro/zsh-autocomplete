@@ -1,8 +1,6 @@
 #autoload
 
 _autocomplete.recent_paths() {
-  setopt localoptions localtraps localpatterns ${_comp_options[@]}
-
   local -aU reply
   local ret=1
 
@@ -27,46 +25,14 @@ _autocomplete.recent_paths() {
 }
 
 .autocomplete.recent_paths.add() {
-  setopt localoptions localtraps localpatterns ${_comp_options[@]}
-
   local tag=$1
   local group_name=$2
   shift 2
+  local -a paths=( "${(@b)${@:A}:#($PWD/|${words[CURRENT]:A})[^/]#}" )
+  local -a display=( "${(@D)paths}" )
 
-  local disp prefix file_prefix suffix ret=1
-  local -a display popt
-
-  local max_lines max_matches
-  zstyle -s ":autocomplete:$curcontext" max-lines max_lines || max_lines='50%'
-  (( max_lines = _autocomplete__max_lines($max_lines) ))
-  (( max_matches = compstate[nmatches] + 4 ))
-
-  local word=${~words[CURRENT]:P}
-
-  local path; for path in ${@:P}; do
-    (( compstate[list_lines] >= max_lines || compstate[nmatches] >= max_matches )) &&
-      break
-
-    [[ ! -e $path ]] && continue
-
-    disp=${(D)path}
-    (( $#disp <= 1 )) && continue
-
-    prefix=$path:h
-    [[ $word = ($path|$path:h) || $prefix == ($word:h|$PWD) ]] && continue
-
-    if [[ $path == /* ]]; then
-      path=${path#/}
-      popt=( -P '/' -W '/' )
-    fi
-
-    display=( "$disp" )
-    local _comp_no_ignore=1
-    _description -V $tag expl $group_name
-    compadd "$expl[@]" -d display -fQ $popt - ${(b)path} && ret=0
-  done
-
-  return ret
+  _description -V $tag expl $group_name
+  compadd "$expl[@]" -fQ -W '/' -d display -a paths
 }
 
 _autocomplete.recent_paths "$@"
