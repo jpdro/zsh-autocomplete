@@ -1,9 +1,10 @@
 #!/bin/zsh
+setopt $_autocomplete__options
 
 if [[ $curcontext == history-incremental-search-*:* ]]; then
   zle ${WIDGET%-search}-select -w
 elif (( BUFFERLINES == 1 )); then
-  local direction='backward'; [[ $WIDGET == up-line-* ]] || tip='forward'
+  local direction='backward'; [[ $WIDGET == up-line-* ]] || direction='forward'
   zle history-search-$direction -w
 else
   local tip='beginning'; [[ $WIDGET == up-line-* ]] || tip='end'

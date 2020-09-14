@@ -1,9 +1,0 @@
-#!/bin/zsh
-
-if (( BUFFERLINES == 1 )); then
-  [[ $WIDGET == up-line-* ]] && local reverse='reverse-'
-  zle ${reverse}menu-select -w
-else
-  local tip='end'; [[ $WIDGET == down-line-* ]] || tip='beginning'
-  zle .${(M)WIDGET#*-line} || zle .${tip}-of-line
-fi

@@ -40,9 +40,9 @@ fi
     bindkey -M menuselect $k $v
   done
   keymap_menuselect[$k]="$(bindkey -M menuselect -L $key[BackTab])"
-  bindkey -M menuselect -s $key[BackTab] $key[DeleteList]$key[Undo]'^[0'$key[Up]
+  bindkey -M menuselect -s $key[ControlSpace] $key[DeleteList]$key[Undo]'^[0'$key[Up]
 
-  local -a words
+  local -a _words
   local -i _current
   local _prefix _suffix
 
@@ -53,8 +53,10 @@ fi
     _suffix=$SUFFIX
   }
 
+  setopt completeinword
   zle -C .autocomplete.get list-choices .autocomplete.get
   zle .autocomplete.get
+  setopt NO_completeinword
 
   local lbuffer=$LBUFFER
   local rbuffer=$RBUFFER

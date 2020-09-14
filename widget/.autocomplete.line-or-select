@@ -1,0 +1,12 @@
+#!/bin/zsh
+setopt $_autocomplete__options
+
+if (( BUFFERLINES == 1 )); then
+  [[ $WIDGET == up-line-* ]] &&
+    local reverse_='reverse-'
+  zle ${reverse_}menu-select -w
+else
+  local tip='end'; [[ $WIDGET == down-line-* ]] ||
+    tip='beginning'
+  zle .${(M)WIDGET#*-line} || zle .${tip}-of-line
+fi

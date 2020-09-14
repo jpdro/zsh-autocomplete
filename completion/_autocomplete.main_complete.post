@@ -1,14 +1,20 @@
 #autoload
 
-[[ -z $BUFFER || $curcontext == history-*search*:* ]] && return 1
+() {
+  zstyle -t ":autocomplete:tab:" insert-unambiguous &&
+      (( $#compstate[unambiguous] > $#words[CURRENT] )) &&
+    return
+  [[ -z $BUFFER ]] &&
+    return
+  [[ $compstate[old_list] == keep ]] &&
+    return
+  [[ $curcontext == history-*search*:* ]] &&
+    return
 
-if [[ $compstate[old_list] == keep ]]; then
-  _autocomplete.unambiguous
-  return
-fi
+  _autocomplete.alias_expansions ||
+    _autocomplete.requoted ||
+    _autocomplete.unambiguous ||
+    _autocomplete.history_lines
+}
 
-(( CURRENT > 1 && compstate[nmatches] == 0 )) && _autocomplete.history_words
-if _autocomplete.alias_expansions || _autocomplete.requoted ||
-    _autocomplete.unambiguous || _autocomplete.history_lines; then
-  _completer='extras'
-fi
+compstate[list_max]=0

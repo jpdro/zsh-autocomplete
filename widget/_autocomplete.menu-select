@@ -1,0 +1,13 @@
+#autoload
+
+_autocomplete.menu-select.post() {
+  compstate[insert]='menu:1 '; [[ $WIDGET == reverse-* ]] &&
+    compstate[insert]='menu:0 '
+}
+
+_autocomplete.menu-select() {
+  local +h -a comppostfuncs=( _autocomplete.menu-select.post $comppostfuncs[@] )
+  _main_complete
+}
+
+_autocomplete.menu-select "$@"

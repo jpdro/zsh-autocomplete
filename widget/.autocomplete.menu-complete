@@ -1,0 +1,35 @@
+#!/bin/zsh
+setopt $_autocomplete__options
+
+if [[ $WIDGET == reverse-* ]]; then
+  zle _reverse_menu_complete -w
+  return
+fi
+
+local -i ret=1
+local lbuffer="$LBUFFER"
+
+if [[ -v functions[_zsh_autosuggest_partial_accept] ]] &&
+    zstyle -T ":autocomplete:tab:" fzf-completion; then
+  zle .forward-word
+  ret=$?
+fi
+
+if [[ "$lbuffer" == "$LBUFFER" ]]; then
+  if zstyle -t ":autocomplete:tab:" fzf-completion; then
+    {
+      zle() {
+        zle "$1" -w "$@[2,-1]"
+      }
+      FZF_COMPLETION_TRIGGER='' fzf_default_completion=_menu_complete fzf-completion
+      ret=$?
+    } always {
+      [[ -v functions[zle] ]] && unfunction zle
+    }
+  else
+    zle _menu_complete -w
+    ret=$?
+  fi
+fi
+
+return ret

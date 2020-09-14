@@ -1,7 +1,0 @@
-#!/bin/zsh
-
-_main_complete
-local ret=$?
-compstate[insert]='1 '
-compstate[list]=''
-return ret

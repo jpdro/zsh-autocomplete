@@ -1,64 +1,20 @@
 #!/bin/zsh
-emulate -L zsh -o noshortloops -o warncreateglobal -o extendedglob
-
-add-zsh-hook precmd .autocomplete.key-binding.precmd
 
 .autocomplete.key-binding.precmd() {
-  emulate -L zsh -o noshortloops -o warncreateglobal -o extendedglob
+  emulate -L zsh -o extendedglob -o NO_shortloops -o warncreateglobal
   add-zsh-hook -d precmd .autocomplete.key-binding.precmd
 
-  local tab_completion
-  zstyle -s ":autocomplete:tab:" completion tab_completion || tab_completion='accept'
-  case $tab_completion in
-    cycle)
-      bindkey $key[Tab] menu-complete
-      bindkey $key[BackTab] reverse-menu-complete
-      ;;
-    select)
-      bindkey $key[Tab] menu-select
-      bindkey $key[BackTab] reverse-menu-select
-      zstyle ':autocomplete:menu-select:*' key-binding 'tab'
-      ;;
-    insert)
-      bindkey $key[Tab] insert-unambiguous
-      bindkey $key[BackTab] reverse-insert-unambiguous
-      ;;
-    accept)
-      zstyle ':autocomplete:tab:*' completion accept
-      if [[ -v functions[_zsh_autosuggest_invoke_original_widget] ]]; then
-        bindkey $key[Tab] _complete_word
-      else
-        bindkey $key[Tab] complete-word
-      fi
-      ;;
-  esac
-  export fzf_default_completion='complete-word'
-  bindkey -M menuselect $key[Tab] menu-complete
-  bindkey -M menuselect $key[BackTab] reverse-menu-complete
-  if  [[ $tab_completion == (accept|fzf) ]]; then
-    bindkey $key[BackTab] list-expand
+  bindkey $key[Tab] menu-complete
+  bindkey $key[BackTab] reverse-menu-complete
+  bindkey $key[ControlSpace] list-expand
+
+  local tab_style
+  zstyle -s ":autocomplete:tab:" widget-style tab_style
+  if [[ $tab_style != (|-)menu-* ]]; then
     bindkey -M menuselect $key[Tab] accept-and-hold
-    bindkey -M menuselect -s $key[BackTab] $key[DeleteList]$key[Undo]$key[BackTab]
+    bindkey -M menuselect $key[BackTab] undo
   fi
-
-  local menuselect
-  zstyle -s ':autocomplete:menu-select:*' key-binding menuselect ||
-    zstyle ':autocomplete:menu-select:*' key-binding "(alt-)down"
-
-  if zstyle -s ':autocomplete:menu-select:' key-binding menuselect; then
-      bindkey $key[ControlSpace] expand-word
-      bindkey -M menuselect $key[ControlSpace] end-of-history
-      zstyle ':completion:*:(alias-expansions|requoted|unambiguous)' format \
-        '%F{green}%d:  %F{blue}%Bctrl-space%b%f'
-      zstyle ':completion:*:history-lines' format \
-        '%F{green}%d:  %F{blue}%Bctrl-space%b%F{blue} to insert  %Bup%b%F{blue} for more%f'
-  else
-      bindkey $key[ControlSpace] menu-select
-      zstyle ':autocomplete:menu-select:*' key-binding "ctrl-space"
-      zstyle ':completion:*:aliases' format '%F{green}%d:%f'
-      zstyle ':completion:*:requoted' format '%F{green}%d:%f'
-      zstyle ':completion:*:unambiguous' format '%F{green}%d:%f'
-  fi
+  bindkey -M menuselect -s $key[ControlSpace] $key[DeleteList]$key[Undo]$key[ControlSpace]
 
   bindkey $key[Up] up-line-or-search
   bindkey $key[Down] down-line-or-select
@@ -74,3 +30,6 @@ add-zsh-hook precmd .autocomplete.key-binding.precmd
   bindkey -M menuselect -s '^R' $key[DeleteList]$key[Undo]'^R'
   bindkey -M menuselect -s '^S' $key[DeleteList]$key[Undo]'^S'
 }
+
+emulate -L zsh -o extendedglob -o NO_shortloops -o warncreateglobal
+add-zsh-hook precmd .autocomplete.key-binding.precmd

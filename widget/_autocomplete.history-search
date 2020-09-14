@@ -1,0 +1,15 @@
+#autoload
+
+_autocomplete.history-search.post() {
+  compstate[list]='list force'
+
+  compstate[insert]='menu:1'; [[ $WIDGET == *-backward ]] &&
+    compstate[insert]='menu:0'
+}
+
+_autocomplete.history-search() {
+  local +h -a comppostfuncs=( _autocomplete.history-search.post $comppostfuncs[@] )
+  _main_complete
+}
+
+_autocomplete.history-search "$@"

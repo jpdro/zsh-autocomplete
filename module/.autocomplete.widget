@@ -9,25 +9,31 @@ add-zsh-hook precmd .autocomplete.widget.precmd
   emulate -L zsh -o noshortloops -o warncreateglobal -o extendedglob
   add-zsh-hook -d precmd .autocomplete.widget.precmd
 
-  .autocomplete.widget.c complete-word complete-word complete-word
-  .autocomplete.widget.z _complete_word complete-word
-  .autocomplete.widget.c expand-word complete-word expand-word
-  .autocomplete.widget.z history-search-backward history-search
-  .autocomplete.widget.z history-search-forward history-search
-  .autocomplete.widget.c _history_search menu-select history-search
-  .autocomplete.widget.z up-line-or-search line-or-search
-  .autocomplete.widget.z down-line-or-search line-or-search
-  .autocomplete.widget.z history-incremental-search-backward history-search
-  .autocomplete.widget.z history-incremental-search-forward history-search
-  .autocomplete.widget.c insert-unambiguous menu-complete insert-unambiguous
-  .autocomplete.widget.c reverse-insert-unambiguous reverse-menu-complete insert-unambiguous
-  .autocomplete.widget.c list-expand menu-select list-expand
-  .autocomplete.widget.c menu-complete menu-complete menu-complete
-  .autocomplete.widget.c reverse-menu-complete reverse-menu-complete menu-complete
-  .autocomplete.widget.c menu-select menu-select menu-select
-  .autocomplete.widget.c reverse-menu-select menu-select menu-select
-  .autocomplete.widget.z down-line-or-select line-or-select
-  .autocomplete.widget.z up-line-or-select line-or-select
+  local tab_style
+  zstyle -s ":autocomplete:tab:" widget-style tab_style || tab_style='complete-word'
+  zstyle ":autocomplete:tab:*" widget-style $tab_style
+  _autocomplete.widget.new menu-complete _menu_complete $tab_style
+
+  local backtab_style=$tab_style
+  [[ $tab_style == menu-complete ]] && backtab_style=reverse-menu-complete
+  _autocomplete.widget.new menu-complete _reverse_menu_complete $backtab_style
+
+  .autocomplete.widget.new menu-complete menu-complete
+  .autocomplete.widget.new menu-complete reverse-menu-complete
+
+  _autocomplete.widget.new list-expand list-expand menu-select
+
+  _autocomplete.widget.new history-search _history_search menu-select
+  .autocomplete.widget.new history-search history-search-backward
+  .autocomplete.widget.new history-search history-search-forward
+  .autocomplete.widget.new history-search history-incremental-search-backward
+  .autocomplete.widget.new history-search history-incremental-search-forward
+
+  .autocomplete.widget.new line-or-search up-line-or-search
+  .autocomplete.widget.new line-or-search down-line-or-search
+
+  .autocomplete.widget.new line-or-select down-line-or-select
+  .autocomplete.widget.new line-or-select up-line-or-select
 
   if [[ -v functions[_zsh_autosuggest_bind_widgets] ]]; then
     [[ -v ZSH_AUTOSUGGEST_IGNORE_WIDGETS ]] && ZSH_AUTOSUGGEST_IGNORE_WIDGETS+=(
@@ -42,14 +48,12 @@ add-zsh-hook precmd .autocomplete.widget.precmd
   fi
 }
 
-.autocomplete.widget.c() {
-  local func=.autocomplete.$3.completion-widget
-  autoload -Uz $func
-  zle -C $1 $2 $func
+_autocomplete.widget.new() {
+  zle -C $2 $3 _autocomplete.$1
 }
 
-.autocomplete.widget.z() {
-  local func=.autocomplete.$2.zle-widget
+.autocomplete.widget.new() {
+  local func=.autocomplete.$1
   autoload -Uz $func
-  zle -N $1 $func
+  zle -N $2 $func
 }

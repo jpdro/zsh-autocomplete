@@ -1,0 +1,27 @@
+#autoload
+
+_autocomplete.menu-complete.post() {
+  compstate[insert]=''; [[ $WIDGETSTYLE == (|*-)menu-* ]] &&
+    compstate[insert]='menu:'
+
+  if [[ $WIDGET == (|_)reverse(-|_)* ]]; then
+    compstate[insert]+='0'
+    return
+  fi
+  compstate[insert]+='1 '
+
+  if zstyle -t ":autocomplete:tab:" insert-unambiguous; then
+    if (( $#compstate[unambiguous] > $#words[CURRENT] )); then
+      compstate[insert]='automenu-unambiguous'
+    elif [[ $_lastcomp[insert] == *unambiguous* ]]; then
+      compstate[insert]="${compstate[insert]/1/2}"
+    fi
+  fi
+}
+
+_autocomplete.menu-complete() {
+  local +h -a comppostfuncs=( _autocomplete.menu-complete.post $comppostfuncs[@] )
+  _main_complete
+}
+
+_autocomplete.menu-complete "$@"

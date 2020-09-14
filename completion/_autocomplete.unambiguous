@@ -1,24 +1,8 @@
 #autoload
 
-(( compstate[nmatches] <= 1 )) && return 1
+(( compstate[nmatches] > 1 )) || return 1
 
-local expl
-
-if zstyle -t ":autocomplete:tab:" completion 'insert'; then
-  if [[ $compstate[old_list] == keep ]]; then
-    _description unambiguous expl 'common substring'
-    compadd "$expl[@]" -QU - $_lastcomp[unambiguous]
-  fi
-  return 1
-fi
-
-local unambiguous=$compstate[unambiguous]
-if [[ $compstate[old_list] == keep ]]; then
-  unambiguous=$_lastcomp[unambiguous]
-fi
-
-[[ -z $unambiguous ]] && return 1
-
+local unambiguous="$compstate[unambiguous]"
 local iprefix=$QIPREFIX$IPREFIX
 local isuffix=$ISUFFIX$QISUFFIX
 [[ -n $iprefix ]] && unambiguous=${unambiguous#$iprefix}
@@ -27,5 +11,6 @@ local isuffix=$ISUFFIX$QISUFFIX
 [[ $unambiguous == (?$words[CURRENT]|$words[CURRENT]?) || $unambiguous == (#i)$~words[CURRENT] ||
   $words[CURRENT] == *$unambiguous* ]] && return 1
 
-_description unambiguous expl 'common substring'
+local expl
+_description unambiguous expl 'longest common substring'
 compadd "$expl[@]" -QU - $unambiguous
