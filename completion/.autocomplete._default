@@ -1,0 +1,6 @@
+#!/bin/zsh
+
+__autocomplete__._default
+local ret=$?
+_autocomplete.history_words
+return ret

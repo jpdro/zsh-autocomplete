@@ -225,7 +225,7 @@ add-zsh-hook precmd .autocomplete.async.precmd
 
   completion-widget() {
     unset 'compstate[vared]'
-    local +h -a comppostfuncs=( _autocomplete.extras message )
+    local +h -a comppostfuncs=( message )
     _main_complete &> /dev/null
     compstate[insert]=''
     compstate[list]=''
@@ -268,7 +268,9 @@ add-zsh-hook precmd .autocomplete.async.precmd
 
   # If a widget can't be called, ZLE always returns true.
   # Thus, we return false on purpose, so we can check if our widget got called.
-  if ! zle _list_choices $seconds $nmatches $list_lines $mesg 2> /dev/null; then
+  if ! zle _list_choices $seconds $nmatches $list_lines $mesg
+  # 2> /dev/null;
+  then
     _autocomplete__buffer=$buffer
     _autocomplete__word=$word
 
@@ -312,7 +314,6 @@ add-zsh-hook precmd .autocomplete.async.precmd
     fi
     _autocomplete.explanation info $mesg
   else
-    local +h -a comppostfuncs=( _autocomplete.extras )
     _main_complete
   fi
   compstate[insert]=''

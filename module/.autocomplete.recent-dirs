@@ -76,16 +76,4 @@ add-zsh-hook precmd .autocomplete.recent-dirs.precmd
   fi
 
   .autocomplete.patch _path_files
-  _path_files() {
-    setopt localoptions localtraps localpatterns ${_comp_options[@]}
-
-    .autocomplete._path_files "$@"
-    local ret=$?
-
-    if (( compstate[nmatches] > 0 )) || [[ $_completer == complete-fuzzy ]]; then
-      _autocomplete.recent_paths
-    fi
-
-    return ret
-  }
 }

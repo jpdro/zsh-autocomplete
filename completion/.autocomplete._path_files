@@ -1,0 +1,10 @@
+#!/bin/zsh
+
+__autocomplete__._path_files "$@"
+local ret=$?
+
+if (( compstate[nmatches] > 0 )) || [[ $_completer == complete-fuzzy ]]; then
+  _autocomplete.recent_paths
+fi
+
+return ret

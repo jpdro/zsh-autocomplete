@@ -1,0 +1,9 @@
+#!/bin/zsh
+
+__autocomplete__._description "$@"
+local ret=$?
+
+# Don't list "corrections" as a possible type of completion.
+[[ $3 == corrections ]] && _lastdescr=( "${(@)_lastdescr[1,-2]}" )
+
+return ret

@@ -1,0 +1,10 @@
+#!/bin/zsh
+emulate -L zsh -o extendedglob -o NO_shortloops -o warncreateglobal
+
+[[ -v functions[$1] ]] && unfunction $1
+autoload +X -Uz $1
+functions[__autocomplete__.$1]=$functions[$1]
+
+local func=".autocomplete.$1"
+autoload +X -Uz $func
+functions[$1]=$functions[$func]

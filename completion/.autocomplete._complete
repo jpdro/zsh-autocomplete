@@ -1,0 +1,28 @@
+#!/bin/zsh
+
+local -i nmatches=$compstate[nmatches]
+{
+  # Make command option listings more compact.
+  if [[ ! -v functions[compadd] ]]; then
+    local dounfunction=1
+    compadd() {
+      if [[ $curcontext == *:options ]]; then
+        local -A arr=()
+        zparseopts -D -E -A arr l
+      fi
+      builtin compadd "$@"
+    }
+  fi
+
+  __autocomplete__._complete "$@"
+} always {
+  [[ -v dounfunction ]] && [[ -v functions[compadd] ]] && unfunction compadd
+}
+
+# Force _main_complete to go to the next completer, if no matches were added.
+if (( compstate[nmatches] == nmatches )); then
+  _comp_mesg=''
+  return 1
+else
+  return 0
+fi

@@ -1,0 +1,11 @@
+#!/bin/zsh
+setopt $_autocomplete__options
+
+local word=$PREFIX$SUFFIX
+local _autocomplete__tail=${word##*/}
+local _autocomplete__head=${word%%$_autocomplete__tail}
+local _autocomplete__alnum=${_autocomplete__tail##[^[:alnum:]]##}
+local _autocomplete__punct=${_autocomplete__tail%%$_autocomplete__alnum}
+
+local +h -a comppostfuncs=( _autocomplete.main_complete.post $comppostfuncs[@] )
+__autocomplete__._main_complete "$@"

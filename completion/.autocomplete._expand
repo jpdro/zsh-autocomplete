@@ -1,0 +1,20 @@
+#!/bin/zsh
+
+if _autocomplete.is_glob && [[ $WIDGET != _complete_help ]]; then
+  [[ $words[CURRENT] == *[*/] ]] || local ISUFFIX="*"
+  {
+    compadd() {
+      setopt localoptions listtypes
+      local -a wopt=( -W "$PWD/" ); [[ $words[CURRENT] = /* ]] && wopt=( -W '/' )
+      builtin compadd -f $wopt "$@"
+    }
+    setopt localoptions NO_listtypes
+    __autocomplete__._expand "$@"
+    local ret=$?
+  } always {
+    unfunction compadd
+  }
+  return ret
+else
+  __autocomplete__._expand "$@"
+fi

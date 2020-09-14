@@ -1,5 +1,5 @@
 #!/bin/zsh
-emulate -L zsh -o noshortloops -o warncreateglobal -o extendedglob
+emulate -L zsh -o extendedglob -o NO_shortloops -o warncreateglobal
 
 # Workaround for https://github.com/zdharma/zinit/issues/366
 [[ -v functions[.zinit-shade-off] ]] && .zinit-shade-off "${___mode:-load}"
@@ -11,7 +11,7 @@ local REPLY
 typeset -g _comp_dumpfile="${_comp_dumpfile:-${ZDOTDIR:-$HOME}/.zcompdump}"
 local -a newer=( ${^fpath}/***/*(Ne:'[[ $REPLY -nt $_comp_dumpfile ]]:':Y1) )
 
-if [[ -z "$functions[_autocomplete.extras]" || ! -e "$_comp_dumpfile" || -e $newer ]]; then
+if [[ -z "$functions[_autocomplete.is_glob]" || ! -e "$_comp_dumpfile" || -e $newer ]]; then
 
   # Decrease Oh My Zsh start-up time. See below.
   [[ -e "$ZSH_COMPDUMP" ]] && local -a omzdump=( ${(f)"$(<$ZSH_COMPDUMP)"} )
@@ -29,97 +29,11 @@ EOF
 fi
 
 _comp_options+=(
-  globdots globstarshort numericglobsort
-  NO_alwaystoend NO_caseglob NO_completealiases
-  NO_globcomplete NO_listbeep NO_listtypes NO_markdirs
+  globdots globstarshort listtypes numericglobsort
+  NO_alwaystoend NO_caseglob NO_completealiases NO_globcomplete NO_listbeep
 )
 
-.autocomplete.patch _main_complete
-_main_complete() {
-  eval "$_comp_setup"
-
-  local word=$PREFIX$SUFFIX
-  local _autocomplete__tail=${word##*/}
-  local _autocomplete__head=${word%%$_autocomplete__tail}
-  local _autocomplete__alnum=${_autocomplete__tail##[^[:alnum:]]##}
-  local _autocomplete__punct=${_autocomplete__tail%%$_autocomplete__alnum}
-
-  (( $#comppostfuncs == 0 )) &&
-    local +h -a comppostfuncs=( _autocomplete.extras _autocomplete.long_list )
-  compstate[insert]='menu '
-  .autocomplete._main_complete "$@"
-}
-
-.autocomplete.patch _default
-_default() {
-  setopt localoptions localtraps localpatterns ${_comp_options[@]}
-
-  .autocomplete._default
-  local ret=$?
-  _autocomplete.history_words
-  return ret
-}
-
-.autocomplete.patch _description
-_description() {
-  setopt localoptions localtraps localpatterns ${_comp_options[@]}
-
-  .autocomplete._description "$@"
-  local ret=$?
-  if [[ $3 == corrections ]]; then
-    _lastdescr=( "${(@)_lastdescr[1,-2]}" )
-  fi
-  return ret
-}
-
-.autocomplete.patch _complete
-_complete() {
-  setopt localoptions localtraps localpatterns ${_comp_options[@]}
-
-  {
-    if [[ ! -v functions[compadd] ]]; then
-      local dounfunction=1
-      compadd() {
-        if [[ $curcontext == *:options ]]; then
-          local -A arr=()
-          zparseopts -D -E -A arr l
-        fi
-        builtin compadd "$@"
-      }
-    fi
-
-    local -i nmatches=$compstate[nmatches]
-    .autocomplete._complete "$@"
-  } always {
-    [[ -v dounfunction ]] && [[ -v functions[compadd] ]] && unfunction compadd
-  }
-  if (( compstate[nmatches] == nmatches )); then
-    _comp_mesg=''
-    return 1
-  else
-    return 0
-  fi
-}
-
-.autocomplete.patch _expand
-_expand() {
-  setopt localoptions localtraps localpatterns ${_comp_options[@]}
-
-  if _autocomplete.is_glob && [[ $WIDGET != _complete_help ]]; then
-    local ISUFFIX="*"
-    {
-      compadd() {
-        setopt localoptions localtraps localpatterns
-        setopt listtypes
-        builtin compadd -f "$@"
-      }
-      .autocomplete._expand "$@"
-      local ret=$?
-    } always {
-      unfunction compadd
-    }
-    return ret
-  else
-    .autocomplete._expand "$@"
-  fi
-}
+autoload -Uz .autocomplete.patch
+local func; for func in _complete _default _description _expand _main_complete; do
+  .autocomplete.patch $func
+done
