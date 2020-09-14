@@ -1,0 +1,41 @@
+#!/bin/zsh
+emulate -L zsh -o extendedglob -o NO_shortloops -o warncreateglobal
+
+typeset -gaU ZSH_AUTOSUGGEST_IGNORE_WIDGETS=( $ZSH_AUTOSUGGEST_IGNORE_WIDGETS[@]
+  'prompt_*' 'recursive-edit' 'reverse-menu-complete' '*-search*' )
+typeset -gaU ZSH_AUTOSUGGEST_ACCEPT_WIDGETS=(
+  ${ZSH_AUTOSUGGEST_ACCEPT_WIDGETS[@]:#*forward-char} )
+typeset -gaU ZSH_AUTOSUGGEST_PARTIAL_ACCEPT_WIDGETS=( $ZSH_AUTOSUGGEST_PARTIAL_ACCEPT_WIDGETS[@]
+  forward-char vi-forward-char menu-complete )
+typeset -g ZSH_AUTOSUGGEST_USE_ASYNC=1
+typeset -g ZSH_AUTOSUGGEST_MANUAL_REBIND=1
+
+_zsh_autosuggest_invoke_original_widget() {
+  builtin zle $1 -w "$@[2,-1]"
+}
+
+local action
+for action in fetch enable disable toggle; do
+  eval "_zsh_autosuggest_widget_$action() {
+    _zsh_autosuggest_$action \$@
+  }"
+done
+for action in clear modify; do
+  eval "_zsh_autosuggest_widget_$action() {
+    if [[ \$curcontext == history-*search*:* ]]; then
+      _zsh_autosuggest_invoke_original_widget \$@
+    else
+      _zsh_autosuggest_$action \$@
+    fi
+  }"
+done
+for action in suggest execute accept partial_accept; do
+  eval "_zsh_autosuggest_widget_$action() {
+    if [[ \$curcontext == history-*search*:* ]]; then
+      _zsh_autosuggest_invoke_original_widget \$@
+    else
+      _zsh_autosuggest_$action \$@
+      .autocomplete.highlight
+    fi
+  }"
+done

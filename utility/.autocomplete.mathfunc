@@ -1,8 +1,8 @@
 #!/bin/zsh
-emulate -L zsh -o noshortloops -o warncreateglobal -o extendedglob
+emulate -L zsh -o extendedglob -o NO_shortloops -o warncreateglobal
 
 _autocomplete__max_lines() {
-  emulate -L zsh -o noshortloops -o warncreateglobal -o extendedglob
+  emulate -L zsh -o extendedglob -o NO_shortloops -o warncreateglobal
 
   local max_lines=$1
   [[ -z $max_lines ]] && max_lines='100%'

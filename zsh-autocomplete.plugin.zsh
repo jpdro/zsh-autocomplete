@@ -26,20 +26,25 @@
   }
 
   # In case we're sourced _after_ `zsh-autosuggestions`
-  add-zsh-hook -d precmd _zsh_autosuggest_start
+  autoload +X -Uz add-zsh-hook .autocomplete.autosuggest
+  [[ -v _zsh_autosuggest_start ]] &&
+    .autocomplete.autosuggest
 
   # In case we're sourced _before_ `zsh-autosuggestions`
   functions[__autocomplete__.add-zsh-hook]=$functions[add-zsh-hook]
   add-zsh-hook() {
-    # Prevent `_zsh_autosuggest_start` from being added.
-    [[ ${@[(ie)_zsh_autosuggest_start]} -gt ${#@} ]] && __autocomplete__.add-zsh-hook "$@"
+    if [[ $@[(ie)_zsh_autosuggest_start] -gt $#@ ]]; then
+      __autocomplete__.add-zsh-hook "$@"
+    else
+      .autocomplete.autosuggest
+    fi
   }
 
   autoload -Uz .autocomplete.__init__ && .autocomplete.__init__
-  local module mod
-  for module in config widget key key-binding recent-dirs async-highlight async-completion; do
-    mod=.autocomplete.$module
-    if ! zstyle -t ':autocomplete:' $module false no off 0; then
+  local mod; for mod in \
+      config widget key key-binding recent-dirs async-highlight async-completion; do
+    if ! zstyle -t :autocomplete: $mod false no off 0; then
+      mod=.autocomplete.$mod
       autoload -Uz $mod && $mod
     fi
   done

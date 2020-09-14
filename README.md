@@ -72,20 +72,21 @@ features.
 | --- | --- | --- |
 | any | Show completions (asynchronously) | <sub>`_list_choices`</sub> |
 | [<kbd>⇥</kbd>](# "tab") | Accept top completion (or next `zsh-autosuggestions` word) | <sub>`complete-word`</sub> |
-| [<kbd>⌃</kbd><kbd>␣</kbd>](# "ctrl-space") | Accept context-sensitive completion (history line, alias expansion, alternative quoting, common substring) | <sub>`expand-word`</sub> |
+| [<kbd>⇤</kbd>](# "shift-tab") | Accept bottom completion (history line, alias expansion, alternative quoting, common substring) | <sub>`expand-word`</sub> |
 | [<kbd>↓</kbd>](# "down") | Open [completion menu](#completion-menu) or move cursor down (in multi-line buffer) | <sub>`down-line-or-select`</sub> |
 | [<kbd>⇟</kbd>](# "page down") | Open completion menu (always) | <sub>`menu-select`</sub> |
-| [<kbd>⇤</kbd>](# "shift-tab") | Open extended completion menu | <sub>`list-expand`</sub> |
+| [<kbd>⌃</kbd><kbd>␣</kbd>](# "ctrl-space") | Open extended completion menu | <sub>`reverse-menu-complete`</sub> |
 | [<kbd>↑</kbd>](# "up") | Open [history menu](#history-menu) or move cursor up (in multi-line buffer) | <sub>`up-line-or-search`</sub> |
 | [<kbd>⇞</kbd>](# "page up") | Open history menu (always) | <sub>`history-search`</sub> |
 
 ## Completion Menu
 | Key(s) | Action |
 | --- | --- |
-| [<kbd>↩︎</kbd>](# "enter") | Accept selection and exit menu |
-| [<kbd>⇥</kbd>](# "tab") | Accept selection, but stay in menu (multi-select) |
 | [<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>](# "arrow keys") | Change selection |
-| [<kbd>⇤</kbd>](# "shift-tab") | Open extended completion menu |
+| [<kbd>↩︎</kbd>](# "enter") | Accept selection and exit menu |
+| [<kbd>⇥</kbd>](# "tab") | Do multi-selection |
+| [<kbd>⇤</kbd>](# "shift-tab") | Undo multi-selection |
+| [<kbd>⌃</kbd><kbd>␣</kbd>](# "ctrl-space") | Open extended completion menu |
 | [<kbd>↖︎</kbd>](# "home") | Beginning of row |
 | [<kbd>↘︎</kbd>](# "end") | End of row |
 | [<kbd>⇞</kbd>](# "page up") | Page up |
@@ -99,9 +100,10 @@ features.
 ## History Menu
 | Key(s) | Action |
 | --- | --- |
-| [<kbd>↩︎</kbd>](# "enter") | Accept selection and exit menu |
-| [<kbd>⇥</kbd>](# "tab") | Accept selection, but stay in menu (multi-select) |
 | [<kbd>↑</kbd><kbd>↓</kbd>](# "up or down") | Change selection |
+| [<kbd>↩︎</kbd>](# "enter") | Accept selection and exit menu |
+| [<kbd>⇥</kbd>](# "tab") | Do multi-selection |
+| [<kbd>⇤</kbd>](# "shift-tab") | Undo multi-selection |
 | [<kbd>⇤</kbd>](# "shift-tab") | Load entire history into menu (not possible in [incremental history search](#incremental-history-search)) |
 | [<kbd>⇞</kbd>](# "page up") | Page up |
 | [<kbd>⇟</kbd>](# "page down") | Page down |
@@ -157,7 +159,7 @@ By default, `zsh-autocomplete` will show completions as soon as you start typing
 
 To make it stay silent until a minimum number of characters have been typed:
 ```shell
-zstyle ':autocomplete:list-choices:*' min-input 3
+zstyle ':autocomplete:*' min-input 3
 ```
 
 ## Shorten or lengthen the autocompletion list
@@ -169,7 +171,7 @@ to prevent the prompt from jumping around too much while you are typing.
 
 To limit the list to a different height, use the following:
 ```shell
-zstyle ':autocomplete:list-choices:*' max-lines 100%
+zstyle ':autocomplete:*' max-lines 100%
 ```
 You can set this to a percentage or to a fixed number of lines. Both work.
 
@@ -189,10 +191,10 @@ You can customize the various completion messages shown.
 
 This is shown when the number of lines needed to display all completions exceeds the number given
 by
-[`zstyle ':autocomplete:list-choices:*' max-lines`](#shorten-or-lengthen-the-autocompletion-list):
+[`zstyle ':autocomplete:*' max-lines`](#shorten-or-lengthen-the-autocompletion-list):
 ```shell
 zstyle ':autocomplete:*:too-many-matches' message \
-  '%F{yellow}Too long list. Press %B$ctrl-space%b %F{yellow}to open or type more to filter.'
+  'Too long list. Press ↓ or ⇟ to open; type more to filter.'
 ```
 
 This is shown when, for the given input, the completion system cannot find any matching completions
@@ -214,34 +216,29 @@ the match you want is
     line).
 However, several alternative behaviors are available.
 
-### Use <kbd>⇥</kbd> and <kbd>⇤</kbd> to select completions
+To make <kbd>⇥</kbd> and <kbd>⇤</kbd> use menu selection:
 ```shell
-zstyle ':autocomplete:tab:*' completion select
+zstyle ':autocomplete:tab:*' widget-style menu-select
 ```
-**Note** that this also changes [<kbd>⌃</kbd><kbd>␣</kbd>](# "ctrl-space") (since you no longer
-need it for selecting completions) to expand an alias, insert a common substring or requote a
-parameter expansion.
 
-<sup>This uses the `menu-select`, `reverse-menu-select` and `expand-word`
-[widgets](#advanced-choose-your-own-key-bindings).</sup>
-
-### Use <kbd>⇥</kbd> and <kbd>⇤</kbd> to cycle between completions
+To let <kbd>⇥</kbd> and <kbd>⇤</kbd> cycle between completions:
 ```shell
-zstyle ':autocomplete:tab:*' completion cycle
+zstyle ':autocomplete:tab:*' widget-style menu-complete
 ```
-<sup>This uses the `menu-complete` and `reverse-menu-complete`
-[widgets](#advanced-choose-your-own-key-bindings).</sup>
 
-### Use <kbd>⇥</kbd> and <kbd>⇤</kbd> to insert a common substring (or cycle)
+To make <kbd>⇥</kbd> insert the longest common substring of all completions listed:
 ```shell
-zstyle ':autocomplete:tab:*' completion insert
+zstyle ':autocomplete:tab:*' insert-unambiguous yes
 ```
-<sup>This uses the `insert-unambiguous` and `reverse-insert-unambiguous`
-[widgets](#advanced-choose-your-own-key-bindings).</sup>
 
-### Use `fzf`'s <kbd>⇥</kbd> completion
+To make <kbd>⇥</kbd> try `fzf`'s completion, before using `zsh-autocomplete`'s own:
 ```shell
-zstyle ':autocomplete:tab:*' completion fzf
+zstyle ':autocomplete:tab:*' fzf-completion yes
+```
+
+To prevent <kbd>⇥</kbd> from accepting words from `zsh-autosuggestions`:
+```shell
+zstyle ':autocomplete:tab:*' accept-autosuggestions no
 ```
 
 ## Disable recent dirs completion
@@ -250,7 +247,7 @@ tool, provided you have it set up to track your directory changes.
 
 To _not_ include recent dirs in your completions:
 ```shell
-zstyle ':autocomplete:*' recent-dirs off
+zstyle ':autocomplete:*' recent-dirs no
 ```
 
 ## Advanced: Use your own completion config
@@ -260,7 +257,7 @@ build their own suite of completion settings, to fully customize the experience.
 
 To disable the pre-packaged config:
 ```shell
-zstyle ':autocomplete:*' config off
+zstyle ':autocomplete:*' config no
 ```
 
 ## Advanced: Choose your own key bindings
@@ -270,7 +267,7 @@ which the defaults might not fit in.
 
 To disable the default key bindings:
 ```shell
-zstyle ':autocomplete:*' key-binding off
+zstyle ':autocomplete:*' key-binding no
 ```
 
 You can then use `zsh-autocomplete`'s [widgets](#key-bindings) to define your own key bindings.

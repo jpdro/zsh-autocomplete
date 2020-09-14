@@ -1,10 +1,6 @@
 #!/bin/zsh
 
+local nm=$compstate[nmatches]
 __autocomplete__._path_files "$@"
-local ret=$?
-
-if (( compstate[nmatches] > 0 )) || [[ $_completer == complete-fuzzy ]]; then
-  _autocomplete.recent_paths
-fi
-
-return ret
+(( $#words[CURRENT] > 1 )) && _autocomplete.recent_paths
+(( compstate[nmatches] > nm ))

@@ -1,7 +1,9 @@
 #autoload
 
-(( $#words > 1 || CURRENT > 1 )) && return 1
-[[ $curcontext == *(approximate|correct|spell)* ]] && return 1
+(( $#words > 1 || CURRENT > 1 )) &&
+  return 1
+[[ $curcontext == *(approximate|correct|spell)* ]] &&
+  return 1
 
 local lbuffer='' rbuffer=''
 local word=$words[CURRENT]

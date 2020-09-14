@@ -1,9 +1,9 @@
 #!/bin/zsh
-setopt localoptions localtraps localpatterns ${_comp_options[@]}
-setopt completeinword
+setopt $_autocomplete__options
+autoload -Uz .autocomplete.curcontext
 
 if [[ $WIDGET == *-incremental-* ]]; then
-  if [[ ! -v functions[.autocomplete.async.complete] ]]; then
+  if [[ ! -v functions[.autocomplete.async-completion.start] ]]; then
     zle .$WIDGET
     return
   fi
@@ -12,7 +12,7 @@ if [[ $WIDGET == *-incremental-* ]]; then
 
   if [[ $curcontext == *-incremental-* ]]; then
     .autocomplete.curcontext $WIDGET
-    .autocomplete.async.complete "$LBUFFER" "$RBUFFER"
+    .autocomplete.async-completion.start
     _autocomplete__buffer=''
     _autocomplete__word=''
     return
@@ -23,12 +23,13 @@ if [[ $WIDGET == *-incremental-* ]]; then
   local -i savelim=$UNDO_LIMIT_NO
 fi
 
+local -A keymap_menuselect=()
+local ret
 {
   [[ -v functions[_zsh_autosuggest_disable] ]] && _zsh_autosuggest_disable
 
   local curcontext; .autocomplete.curcontext $WIDGET
 
-  local -A keymap_menuselect=()
   local k v; for k v in \
       $key[Left] .backward-char \
       $key[Right] .forward-char \
@@ -67,10 +68,6 @@ fi
   zle -Rc
 
   if [[ $WIDGET == *-incremental-* ]]; then
-    .autocomplete.async.complete "$_prefix" "$_suffix"
-    _autocomplete__buffer=''
-    _autocomplete__word=''
-
     .autocomplete.maybe-complete() {
       _main_complete
       local ret=$?
@@ -98,7 +95,7 @@ fi
         zle .send-break
       else
         .autocomplete.curcontext $WIDGET
-        .autocomplete.async.complete "$LBUFFER" "$RBUFFER"
+        .autocomplete.async-completion.start
         _autocomplete__buffer=''
         _autocomplete__word=''
         zle -R
@@ -111,14 +108,23 @@ fi
     () {
       lbuffer=$LBUFFER
       rbuffer=$RBUFFER
-      local +h PREDISPLAY="$LBUFFER❯ "
-      local +h POSTDISPLAY=" ❮$RBUFFER"
       local +h LBUFFER=$_prefix
       local +h RBUFFER=$_suffix
+      _autocomplete__highlight=()
+      .autocomplete.async-completion.start
+      _autocomplete__buffer=''
+      _autocomplete__word=''
+      local +h PREDISPLAY="$lbuffer❯ "
+      local +h POSTDISPLAY=" ❮$rbuffer"
+      typeset -r PREDISPLAY POSTDISPLAY
+      .autocomplete.highlight
+
       zle split-undo
       UNDO_LIMIT_NO=$UNDO_CHANGE_NO
+
       zle recursive-edit
       ret=$?
+
       _prefix=$LBUFFER
       _suffix=$RBUFFER
     }
@@ -131,8 +137,10 @@ fi
     LBUFFER="$LBUFFER$_prefix"
     RBUFFER="$_suffix$RBUFFER"
     zle -R
+
     zle _history_search
     ret=$?
+
     (( ret == 0 )) || zle .undo
   fi
 } always {
@@ -148,7 +156,7 @@ fi
     UNDO_LIMIT_NO=savelim
     _autocomplete__buffer=''
     _autocomplete__word=''
-    .autocomplete.async.complete "$LBUFFER" "$RBUFFER"
+    .autocomplete.async-completion.start
     zle -A .accept-line accept-line
     zle -A .self-insert self-insert
   fi

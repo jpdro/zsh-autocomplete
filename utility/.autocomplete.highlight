@@ -1,0 +1,13 @@
+#!/bin/zsh
+emulate -L zsh -o extendedglob -o NO_shortloops -o warncreateglobal
+
+region_highlight=( $_autocomplete__highlight[@] )
+if [[ $curcontext == history-*search*:* ]]; then
+  region_highlight=(
+    "P0 $#PREDISPLAY fg=default"
+    $region_highlight[@]
+    "$#BUFFER $(($#BUFFER + $#POSTDISPLAY)) fg=default"
+  )
+elif [[ -v functions[_zsh_autosuggest_highlight_apply] ]]; then
+  _zsh_autosuggest_highlight_apply
+fi

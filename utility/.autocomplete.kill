@@ -1,5 +1,5 @@
 #!/bin/zsh
-emulate -L zsh -o noshortloops -o warncreateglobal -o extendedglob
+emulate -L zsh -o extendedglob -o NO_shortloops -o warncreateglobal
 
 local -i fd=$1 pid=$2
 

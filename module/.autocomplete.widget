@@ -1,12 +1,7 @@
 #!/bin/zsh
-emulate -L zsh -o noshortloops -o warncreateglobal -o extendedglob
-
-export ZSH_AUTOSUGGEST_MANUAL_REBIND=1
-
-add-zsh-hook precmd .autocomplete.widget.precmd
 
 .autocomplete.widget.precmd() {
-  emulate -L zsh -o noshortloops -o warncreateglobal -o extendedglob
+  emulate -L zsh -o extendedglob -o NO_shortloops -o warncreateglobal
   add-zsh-hook -d precmd .autocomplete.widget.precmd
 
   local tab_style
@@ -35,17 +30,8 @@ add-zsh-hook precmd .autocomplete.widget.precmd
   .autocomplete.widget.new line-or-select down-line-or-select
   .autocomplete.widget.new line-or-select up-line-or-select
 
-  if [[ -v functions[_zsh_autosuggest_bind_widgets] ]]; then
-    [[ -v ZSH_AUTOSUGGEST_IGNORE_WIDGETS ]] && ZSH_AUTOSUGGEST_IGNORE_WIDGETS+=(
-      prompt_\*
-      user:_zsh_highlight_widget_\*-zle-line-finish
-    )
-    [[ -v ZSH_AUTOSUGGEST_PARTIAL_ACCEPT_WIDGETS ]] && ZSH_AUTOSUGGEST_PARTIAL_ACCEPT_WIDGETS+=(
-      forward-char
-      vi-forward-char
-    )
+  [[ -v functions[_zsh_autosuggest_bind_widgets] ]] &&
     _zsh_autosuggest_bind_widgets
-  fi
 }
 
 _autocomplete.widget.new() {
@@ -57,3 +43,8 @@ _autocomplete.widget.new() {
   autoload -Uz $func
   zle -N $2 $func
 }
+
+emulate -L zsh -o extendedglob -o NO_shortloops -o warncreateglobal
+autoload -Uz .autocomplete.highlight
+
+add-zsh-hook precmd .autocomplete.widget.precmd
