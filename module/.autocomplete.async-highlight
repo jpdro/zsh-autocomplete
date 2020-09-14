@@ -1,0 +1,114 @@
+#!/bin/zsh
+emulate -L zsh -o noshortloops -o warncreateglobal -o extendedglob
+
+add-zsh-hook precmd .autocomplete.async-highlight.precmd
+
+.autocomplete.async-highlight.precmd() {
+  emulate -L zsh -o noshortloops -o warncreateglobal -o extendedglob
+  add-zsh-hook -d precmd .autocomplete.async-highlight.precmd
+
+  zmodload zsh/system  # `sysparams` array
+  zmodload zsh/zpty
+  autoload -Uz .autocomplete.kill
+
+  typeset -gHi _autocomplete__async_highlight_fd _autocomplete__async_highlight_pid
+  zle -N .autocomplete.async-highlight.highlight.fd-widget
+
+  typeset -gHa _autocomplete__region_highlight=()
+
+  if [[ -v functions[_zsh_highlight_call_widget] ]]; then
+    _zsh_highlight_call_widget() {
+      builtin zle "$@"
+    }
+  fi
+
+  if [[ -v functions[_zsh_autosuggest_disable] ]]; then
+    local action
+    for action in clear modify fetch suggest accept partial_accept execute enable disable toggle
+    do
+      eval "_zsh_autosuggest_widget_$action() {
+        _zsh_autosuggest_$action \$@
+      }"
+    done
+    _zsh_autosuggest_disable
+  fi
+
+  add-zle-hook-widget -d line-pre-redraw .autocomplete.async-highlight.line-pre-redraw
+  add-zle-hook-widget line-pre-redraw .autocomplete.async-highlight.line-pre-redraw
+  add-zsh-hook -d preexec .autocomplete.async-highlight.stop
+  add-zsh-hook preexec .autocomplete.async-highlight.stop
+  add-zsh-hook -d zshexit .autocomplete.async-highlight.stop
+  add-zsh-hook zshexit .autocomplete.async-highlight.stop
+}
+
+.autocomplete.async-highlight.line-pre-redraw() {
+  region_highlight=( $_autocomplete__region_highlight )
+
+  if [[ -z $BUFFER && $curcontext != history-*search*:* ]] ||
+      (( KEYS_QUEUED_COUNT + PENDING > 0 )); then
+    .autocomplete.async-highlight.stop
+    return 0
+  fi
+
+  .autocomplete.async-highlight.start
+}
+
+.autocomplete.async-highlight.stop() {
+  emulate -L zsh -o noshortloops -o warncreateglobal -o extendedglob
+
+  .autocomplete.kill $_autocomplete__async_highlight_fd $_autocomplete__async_highlight_pid
+  _autocomplete__async_highlight_fd=0
+  _autocomplete__async_highlight_pid=0
+}
+
+.autocomplete.async-highlight.start() {
+  [[ -v functions[_zsh_autosuggest_async_request] ]] && _zsh_autosuggest_async_request "$BUFFER"
+  .autocomplete.async-highlight.highlight
+
+  # There's a weird bug in Zsh < 5.8, where where ^C stops working unless we force a fork.
+  # See https://github.com/zsh-users/zsh-autosuggestions/issues/364
+  command true
+}
+
+.autocomplete.async-highlight.highlight() {
+  if [[ -v functions[_zsh_highlight] || -v functions[_zsh_autosuggest_highlight_apply] ]]; then
+    .autocomplete.kill $_autocomplete__async_highlight_fd $_autocomplete__async_highlight_pid
+    exec {_autocomplete__async_highlight_fd}< <(
+      {
+        setopt localoptions localtraps localpatterns ${_comp_options[@]}
+        setopt noxtrace noverbose
+
+        local pid=$sysparams[pid]
+        print $pid
+        if [[ -v functions[_zsh_autosuggest_fetch_suggestion] ]]; then
+          local suggestion
+          _zsh_autosuggest_fetch_suggestion "$BUFFER"
+          _zsh_autosuggest_suggest "$suggestion"
+        fi
+        [[ -v functions[_zsh_highlight] ]] && _zsh_highlight
+        [[ -v functions[_zsh_autosuggest_highlight_apply] ]] && _zsh_autosuggest_highlight_apply
+        print $pid$'\0'${(qq)region_highlight}$'\0'$'\0'
+      } always {
+        kill -TERM $pid
+      }
+    )
+    read _autocomplete__async_highlight_pid <&$_autocomplete__async_highlight_fd
+    zle -Fw "$_autocomplete__async_highlight_fd" .autocomplete.async-highlight.highlight.fd-widget
+  fi
+}
+
+.autocomplete.async-highlight.highlight.fd-widget() {
+  local pid highlight eof
+  {
+    [[ -z $2 || $2 == hup ]] && IFS=$'\0' read -r -u "$1" pid highlight eof
+  } always {
+    .autocomplete.kill $1 $pid
+  }
+
+  _autocomplete__region_highlight=( ${(Q)${(@z)highlight}} )
+  region_highlight=( $_autocomplete__region_highlight )
+  zle -R
+
+  [[ $_autocomplete__buffer != $buffer || $_autocomplete__word != $word ]] &&
+    .autocomplete.async-highlight.complete "$LBUFFER" "$RBUFFER"
+}
